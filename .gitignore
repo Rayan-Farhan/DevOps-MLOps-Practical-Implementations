@@ -1,3 +1,5 @@
 .ipynb_checkpoints
-_py_cache__
+__pycache__
 *.pyc
+app.log
+.pytest_cache
