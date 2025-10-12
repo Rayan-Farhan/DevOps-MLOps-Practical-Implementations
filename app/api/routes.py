@@ -18,15 +18,11 @@ model_features = None
 try:
     with open(model_path, "rb") as f:
         loaded = pickle.load(f)
-
-    #if isinstance(loaded, dict) and "model" in loaded:
         model = loaded.get("model")
         scaler = loaded.get("scaler")
         model_features = loaded.get("features")
         logger.info(f"Model bundle loaded. Model type: {type(model)}, scaler: {type(scaler)}, features: {model_features}")
-    #else:
-    #    model = loaded
-    #    logger.info(f"Model loaded successfully from {model_path} (single object)")
+
 except Exception as e:
     logger.error(f"Failed to load model: {e}")
     model = None
