@@ -1,31 +1,34 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router
+from app.config import settings
 import logging
 import os
 
 app = FastAPI(
-    title="Diabetes Prediction API",
-    description="Predict the likelihood of diabetes based on patient health parameters.",
-    version="1.0.0"
+    title=settings.APP_NAME,
+    description=settings.APP_DESCRIPTION,
+    version=settings.APP_VERSION
 )
+
+allowed_origins = settings.get_cors_origins()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # You can restrict this later to frontend URL (e.g., http://localhost:5173)
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(router, prefix="/api")
+app.include_router(router, prefix=settings.API_PREFIX)
 
-os.makedirs("app/logs", exist_ok=True)
+os.makedirs(settings.LOG_DIR, exist_ok=True)
 
 logging.basicConfig(
-    filename="app/logs/app.log",
+    filename=settings.LOG_FILE,
     format="%(asctime)s - %(levelname)s - %(message)s",
-    level=logging.INFO
+    level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
 )
 
 @app.on_event("startup")
