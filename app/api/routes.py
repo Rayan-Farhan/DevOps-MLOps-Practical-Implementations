@@ -2,48 +2,57 @@ from fastapi import APIRouter, HTTPException
 import numpy as np
 import pickle
 import logging
-from app.schemas.diabetes_schema import DiabetesInput
 import os
+from app.schemas.diabetes_schema import DiabetesInput
+from app.config import settings
 
 router = APIRouter()
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-model_path = os.path.join(os.path.dirname(__file__), "..", "model", "diabetes_model.pkl")
-
+# Load ML model at module import time
+model_path = settings.MODEL_PATH
 model = None
 scaler = None
 model_features = None
-try:
-    with open(model_path, "rb") as f:
-        loaded = pickle.load(f)
-        model = loaded.get("model")
-        scaler = loaded.get("scaler")
-        model_features = loaded.get("features")
-        logger.info(f"Model bundle loaded. Model type: {type(model)}, scaler: {type(scaler)}, features: {model_features}")
 
-except Exception as e:
-    logger.error(f"Failed to load model: {e}")
-    model = None
-    scaler = None
-    model_features = None
+if not os.path.exists(model_path):
+    logger.error(f"Model file not found at path: {model_path}")
+    logger.error(f"Current working directory: {os.getcwd()}")
+    logger.error(f"Absolute model path: {os.path.abspath(model_path)}")
+else:
+    logger.info(f"Model file found at: {model_path}")
+    try:
+        with open(model_path, "rb") as f:
+            loaded = pickle.load(f)
+            model = loaded.get("model")
+            scaler = loaded.get("scaler")
+            model_features = loaded.get("features")
+            logger.info(f"Model bundle loaded successfully. Model type: {type(model)}, scaler: {type(scaler)}, features: {model_features}")
+    except Exception as e:
+        logger.error(f"Failed to load model from {model_path}: {e}")
+        logger.error(f"Error type: {type(e).__name__}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        model = None
+        scaler = None
+        model_features = None
 
 
 @router.get("/health")
 def health_check():
-    """Health check endpoint"""
     return {"status": "ok", "message": "Diabetes Prediction API is running!"}
 
 
 @router.post("/predict")
 def predict_diabetes(data: DiabetesInput):
-    """Predict diabetes likelihood based on input"""
     if model is None:
         logger.error("Model not loaded.")
         raise HTTPException(status_code=500, detail="Model not loaded")
 
     try:
+        # Use model's feature order if available, otherwise use default order
         if model_features:
             row = [getattr(data, feature) for feature in model_features]
             input_data = np.array([row])
@@ -59,7 +68,7 @@ def predict_diabetes(data: DiabetesInput):
                 data.Age
             ]])
 
-        # apply scaler if present
+        # Apply feature scaling if scaler was saved with the model
         if scaler is not None:
             try:
                 input_data = scaler.transform(input_data)
