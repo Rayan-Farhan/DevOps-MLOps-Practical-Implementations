@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { API_URL } from "../config";
 
 const PredictionForm = ({ setResult }) => {
   const [formData, setFormData] = useState({
@@ -20,11 +21,27 @@ const PredictionForm = ({ setResult }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/predict", formData);
+      const payload = {
+        Pregnancies: parseInt(formData.Pregnancies) || 0,
+        Glucose: parseInt(formData.Glucose) || 0,
+        BloodPressure: parseInt(formData.BloodPressure) || 0,
+        SkinThickness: parseInt(formData.SkinThickness) || 0,
+        Insulin: parseInt(formData.Insulin) || 0,
+        BMI: parseFloat(formData.BMI) || 0,
+        DiabetesPedigreeFunction: parseFloat(formData.DiabetesPedigreeFunction) || 0,
+        Age: parseInt(formData.Age) || 0,
+      };
+      
+      const response = await axios.post(`${API_URL}${API_URL.endsWith('/') ? '' : '/'}api/predict`, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       setResult(response.data);
     } catch (error) {
-      console.error(error);
-      alert("Error connecting to backend");
+      console.error('Error:', error);
+      const errorMessage = error.response?.data?.detail || error.message || 'Unknown error';
+      alert(`Error connecting to backend: ${errorMessage}\n\nCheck browser console (F12) for details.`);
     }
   };
 
