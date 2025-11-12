@@ -2,7 +2,6 @@ import os
 from typing import List
 from pathlib import Path
 
-
 class Settings:
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
