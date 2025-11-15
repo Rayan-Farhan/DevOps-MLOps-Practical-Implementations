@@ -5,19 +5,14 @@ import logging
 import os
 from app.schemas.diabetes_schema import DiabetesInput
 from app.config import settings
-from prometheus_client import Counter
+from app.utils.metrics import inc_prediction
 
 router = APIRouter()
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# Metrics: count successful predictions
-PREDICTION_COUNTER = Counter(
-    "diabetes_predictions_total",
-    "Total number of predictions made",
-    ["result"],
-)
+# Metrics are defined centrally in app.utils.metrics
 
 # Load ML model at module import time
 model_path = settings.MODEL_PATH
@@ -82,11 +77,7 @@ def predict_diabetes(data: DiabetesInput):
 
         prediction = model.predict(input_data)
         result = "Diabetic" if prediction[0] == 1 else "Non-Diabetic"
-        try:
-            PREDICTION_COUNTER.labels(result=result).inc()
-        except Exception:
-            # Metrics failure should not break API
-            pass
+        inc_prediction(result)
 
         logger.info(f"✅ Prediction made successfully: {result}")
         return {"prediction": int(prediction[0]), "result": result}
