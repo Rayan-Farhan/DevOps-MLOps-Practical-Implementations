@@ -1,0 +1,14 @@
+# Root dockerignore - keep backend image small
+.git
+.dvc/cache
+artifacts/**
+!artifacts/model.pkl.dvc
+frontend/node_modules
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+.env
+mlruns/
+.ipynb_checkpoints/
