@@ -1,6 +1,10 @@
 import os
 from typing import List
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from a .env file if present
+load_dotenv()
 
 class Settings:
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")

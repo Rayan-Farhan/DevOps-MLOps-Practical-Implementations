@@ -5,11 +5,19 @@ import logging
 import os
 from app.schemas.diabetes_schema import DiabetesInput
 from app.config import settings
+from prometheus_client import Counter
 
 router = APIRouter()
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+# Metrics: count successful predictions
+PREDICTION_COUNTER = Counter(
+    "diabetes_predictions_total",
+    "Total number of predictions made",
+    ["result"],
+)
 
 # Load ML model at module import time
 model_path = settings.MODEL_PATH
@@ -19,8 +27,6 @@ model_features = None
 
 if not os.path.exists(model_path):
     logger.error(f"Model file not found at path: {model_path}")
-    logger.error(f"Current working directory: {os.getcwd()}")
-    logger.error(f"Absolute model path: {os.path.abspath(model_path)}")
 else:
     logger.info(f"Model file found at: {model_path}")
     try:
@@ -29,12 +35,11 @@ else:
             model = loaded.get("model")
             scaler = loaded.get("scaler")
             model_features = loaded.get("features")
-            logger.info(f"Model bundle loaded successfully. Model type: {type(model)}, scaler: {type(scaler)}, features: {model_features}")
+            logger.info(
+                f"Model bundle loaded successfully. Model type: {type(model)}, scaler: {type(scaler)}, features: {model_features}"
+            )
     except Exception as e:
-        logger.error(f"Failed to load model from {model_path}: {e}")
-        logger.error(f"Error type: {type(e).__name__}")
-        import traceback
-        logger.error(f"Traceback: {traceback.format_exc()}")
+        logger.error(f"Failed to load model from {model_path}: {e} ({type(e).__name__})")
         model = None
         scaler = None
         model_features = None
@@ -77,6 +82,11 @@ def predict_diabetes(data: DiabetesInput):
 
         prediction = model.predict(input_data)
         result = "Diabetic" if prediction[0] == 1 else "Non-Diabetic"
+        try:
+            PREDICTION_COUNTER.labels(result=result).inc()
+        except Exception:
+            # Metrics failure should not break API
+            pass
 
         logger.info(f"✅ Prediction made successfully: {result}")
         return {"prediction": int(prediction[0]), "result": result}

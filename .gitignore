@@ -1,5 +1,22 @@
 .ipynb_checkpoints
 __pycache__
+__init__.py
 *.pyc
 app.log
 .pytest_cache
+
+# Env files
+.env
+.env.*
+*.env
+
+# Logs
+app/logs/*.log
+
+# Virtual envs
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
