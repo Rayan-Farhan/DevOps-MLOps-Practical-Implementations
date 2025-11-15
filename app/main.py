@@ -32,11 +32,11 @@ logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
 )
 
+Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
+
 @app.on_event("startup")
 def startup_event():
     logging.info("FastAPI app started successfully!")
-    # Expose default Prometheus metrics, including per-endpoint latency and count
-    Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
 
 @app.on_event("shutdown")
 def shutdown_event():
