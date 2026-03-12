@@ -6,40 +6,56 @@ import { API_URL } from "../config";
 
 export const Home = () => {
   const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
   const [backendStatus, setBackendStatus] = useState("checking");
 
   useEffect(() => {
-    const healthCheckUrl = `${API_URL}${API_URL.endsWith('/') ? '' : '/'}api/health`;
-    axios.get(healthCheckUrl)
-      .then((response) => {
-        setBackendStatus("connected");
-      })
-      .catch((error) => {
-        console.error("Backend connection failed:", error);
+    const healthCheckUrl = `${API_URL}${API_URL.endsWith("/") ? "" : "/"}api/health`;
+    axios
+      .get(healthCheckUrl)
+      .then(() => setBackendStatus("connected"))
+      .catch((err) => {
+        console.error("Backend connection failed:", err);
         setBackendStatus("disconnected");
       });
   }, []);
 
+  const statusClass =
+    backendStatus === "connected"
+      ? "status-connected"
+      : backendStatus === "disconnected"
+        ? "status-disconnected"
+        : "status-checking";
+
+  const statusText =
+    backendStatus === "checking"
+      ? "Checking connection..."
+      : backendStatus === "connected"
+        ? "Backend connected"
+        : "Backend disconnected";
+
   return (
     <div className="app-container">
-      <h1>Diabetes Prediction</h1>
-      
-      <div style={{ 
-        padding: "10px", 
-        marginBottom: "20px", 
-        borderRadius: "5px",
-        backgroundColor: backendStatus === "connected" ? "#d4edda" : backendStatus === "disconnected" ? "#f8d7da" : "#fff3cd",
-        color: backendStatus === "connected" ? "#155724" : backendStatus === "disconnected" ? "#721c24" : "#856404",
-        border: `1px solid ${backendStatus === "connected" ? "#c3e6cb" : backendStatus === "disconnected" ? "#f5c6cb" : "#ffeaa7"}`
-      }}>
-        Backend Status: {
-          backendStatus === "checking" ? "🔄 Checking..." :
-          backendStatus === "connected" ? "✅ Connected" :
-          "❌ Disconnected - Check console (F12) for details"
-        }
+      <header className="app-header">
+        <h1>Diabetes Risk Predictor</h1>
+        <p className="app-subtitle">
+          Enter patient health parameters to predict diabetes risk using an ML model.
+        </p>
+      </header>
+
+      <div className={`status-banner ${statusClass}`}>
+        <span className="status-dot" />
+        {statusText}
       </div>
 
-      <PredictionForm setResult={setResult} />
+      {error && (
+        <div className="error-banner">
+          <strong>Error:</strong> {error}
+        </div>
+      )}
+
+      <PredictionForm setResult={setResult} setError={setError} />
+
       {result && <ResultCard result={result} />}
     </div>
   );
