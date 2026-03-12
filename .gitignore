@@ -20,3 +20,24 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+
+# MLflow tracking data
+mlruns/
+mlartifacts/
+mlflow.db
+
+# DVC cache
+.dvc/cache/
+.dvc/tmp/
+
+# Pipeline data files (tracked by DVC, not git)
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Live prediction log (runtime, not committed)
+data/predictions.db
+
+# Node modules
+frontend/node_modules/
