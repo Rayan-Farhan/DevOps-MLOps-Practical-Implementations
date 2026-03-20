@@ -1,0 +1,182 @@
+schema: '2.0'
+stages:
+  ingest:
+    cmd: python pipeline/ingest.py
+    deps:
+    - path: params.yaml
+      hash: md5
+      md5: c41e81ac4bbaff0914836120ea015ea9
+      size: 2009
+    - path: pipeline/ingest.py
+      hash: md5
+      md5: 5411fabdd9ebc8c64ac6a46699caea4c
+      size: 4146
+    outs:
+    - path: data/raw/diabetes.csv
+      hash: md5
+      md5: f2906818eda8fcfc8f8416557ab1e6df
+      size: 23873
+    - path: data/raw/ingest_metadata.json
+      hash: md5
+      md5: c08256b587a574e3cf74de412dd7c64c
+      size: 495
+  validate:
+    cmd: python pipeline/validate.py
+    deps:
+    - path: data/raw/diabetes.csv
+      hash: md5
+      md5: f2906818eda8fcfc8f8416557ab1e6df
+      size: 23873
+    - path: params.yaml
+      hash: md5
+      md5: c41e81ac4bbaff0914836120ea015ea9
+      size: 2009
+    - path: pipeline/validate.py
+      hash: md5
+      md5: 895aec3c753d6db92467839975278c51
+      size: 5460
+    outs:
+    - path: data/raw/validation_report.json
+      hash: md5
+      md5: 8b17dc5863d55f545dee60b0bf9f4f67
+      size: 1407
+  preprocess:
+    cmd: python pipeline/preprocess.py
+    deps:
+    - path: data/raw/diabetes.csv
+      hash: md5
+      md5: f2906818eda8fcfc8f8416557ab1e6df
+      size: 23873
+    - path: params.yaml
+      hash: md5
+      md5: c41e81ac4bbaff0914836120ea015ea9
+      size: 2009
+    - path: pipeline/preprocess.py
+      hash: md5
+      md5: 170920aad466a6b5a38e6bd1b9bd9208
+      size: 4966
+    outs:
+    - path: data/processed/X_test.npy
+      hash: md5
+      md5: 156db0fff3c3c236e240c0e6f963bd92
+      size: 9984
+    - path: data/processed/X_train.npy
+      hash: md5
+      md5: 3f7b83dac64dc2748989a040878ff727
+      size: 39424
+    - path: data/processed/feature_names.json
+      hash: md5
+      md5: 48e79159b9f4bfdf600ae261809c8253
+      size: 140
+    - path: data/processed/scaler.pkl
+      hash: md5
+      md5: 06b0e3ff0d4fe6cafc204a4f009728d9
+      size: 800
+    - path: data/processed/train_medians.json
+      hash: md5
+      md5: 609b204bcecb8e6de30157fcce1caf6e
+      size: 191
+    - path: data/processed/y_test.npy
+      hash: md5
+      md5: e85fa08fde72598e1ba4b24e0d28107f
+      size: 1360
+    - path: data/processed/y_train.npy
+      hash: md5
+      md5: b526921166f2ff51acb13b47843cd2e4
+      size: 5040
+  train:
+    cmd: python pipeline/train.py
+    deps:
+    - path: data/processed/X_train.npy
+      hash: md5
+      md5: 3f7b83dac64dc2748989a040878ff727
+      size: 39424
+    - path: data/processed/feature_names.json
+      hash: md5
+      md5: 48e79159b9f4bfdf600ae261809c8253
+      size: 140
+    - path: data/processed/train_medians.json
+      hash: md5
+      md5: 609b204bcecb8e6de30157fcce1caf6e
+      size: 191
+    - path: data/processed/y_train.npy
+      hash: md5
+      md5: b526921166f2ff51acb13b47843cd2e4
+      size: 5040
+    - path: params.yaml
+      hash: md5
+      md5: c41e81ac4bbaff0914836120ea015ea9
+      size: 2009
+    - path: pipeline/train.py
+      hash: md5
+      md5: 6d479d9d7a898ed5a675d13d99143676
+      size: 15753
+    outs:
+    - path: data/processed/model_gradient_boosting.pkl
+      hash: md5
+      md5: 2a5029ac7e373b432bacc7a67cda73a5
+      size: 392924
+    - path: data/processed/model_logistic_regression.pkl
+      hash: md5
+      md5: 6864b165453af0fb9e284df2f5f00628
+      size: 2089
+    - path: data/processed/model_random_forest.pkl
+      hash: md5
+      md5: c20dbc8ade874906446a9a80cadd7c9f
+      size: 1789613
+    - path: data/processed/model_xgboost.pkl
+      hash: md5
+      md5: 17ecc11bdaf2ee58b3ff7945eccced6c
+      size: 163547
+    - path: data/processed/trained_model.pkl
+      hash: md5
+      md5: 3a2162ca6e558efaa7aa1ed8aa220cc8
+      size: 2141
+    - path: data/processed/training_report.json
+      hash: md5
+      md5: 7c7323dd9ad58fd8d65cc74e7c6f72f1
+      size: 1827
+  evaluate:
+    cmd: python pipeline/evaluate.py
+    deps:
+    - path: data/processed/X_test.npy
+      hash: md5
+      md5: 156db0fff3c3c236e240c0e6f963bd92
+      size: 9984
+    - path: data/processed/model_gradient_boosting.pkl
+      hash: md5
+      md5: 2a5029ac7e373b432bacc7a67cda73a5
+      size: 392924
+    - path: data/processed/model_logistic_regression.pkl
+      hash: md5
+      md5: 6864b165453af0fb9e284df2f5f00628
+      size: 2089
+    - path: data/processed/model_random_forest.pkl
+      hash: md5
+      md5: c20dbc8ade874906446a9a80cadd7c9f
+      size: 1789613
+    - path: data/processed/model_xgboost.pkl
+      hash: md5
+      md5: 17ecc11bdaf2ee58b3ff7945eccced6c
+      size: 163547
+    - path: data/processed/y_test.npy
+      hash: md5
+      md5: e85fa08fde72598e1ba4b24e0d28107f
+      size: 1360
+    - path: params.yaml
+      hash: md5
+      md5: c41e81ac4bbaff0914836120ea015ea9
+      size: 2009
+    - path: pipeline/evaluate.py
+      hash: md5
+      md5: 3f1fcf50b79a75e924e56b19fb659d17
+      size: 10869
+    outs:
+    - path: data/processed/evaluation_report.json
+      hash: md5
+      md5: f8bfc4f34c5a8bd798ad5d2b9d80bcac
+      size: 1717
+    - path: data/processed/metrics.json
+      hash: md5
+      md5: 01eb2f2ff256d00957525c03dfb958fc
+      size: 484

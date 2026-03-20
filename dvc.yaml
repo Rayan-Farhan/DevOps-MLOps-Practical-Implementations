@@ -1,0 +1,67 @@
+stages:
+  ingest:
+    cmd: python pipeline/ingest.py
+    deps:
+      - pipeline/ingest.py
+      - params.yaml
+    outs:
+      - data/raw/diabetes.csv
+      - data/raw/ingest_metadata.json
+
+  validate:
+    cmd: python pipeline/validate.py
+    deps:
+      - pipeline/validate.py
+      - data/raw/diabetes.csv
+      - params.yaml
+    outs:
+      - data/raw/validation_report.json
+
+  preprocess:
+    cmd: python pipeline/preprocess.py
+    deps:
+      - pipeline/preprocess.py
+      - data/raw/diabetes.csv
+      - params.yaml
+    outs:
+      - data/processed/X_train.npy
+      - data/processed/X_test.npy
+      - data/processed/y_train.npy
+      - data/processed/y_test.npy
+      - data/processed/scaler.pkl
+      - data/processed/feature_names.json
+      - data/processed/train_medians.json
+
+  train:
+    cmd: python pipeline/train.py
+    deps:
+      - pipeline/train.py
+      - data/processed/X_train.npy
+      - data/processed/y_train.npy
+      - data/processed/feature_names.json
+      - data/processed/train_medians.json
+      - params.yaml
+    outs:
+      - data/processed/trained_model.pkl
+      - data/processed/training_report.json
+      - data/processed/model_random_forest.pkl
+      - data/processed/model_logistic_regression.pkl
+      - data/processed/model_gradient_boosting.pkl
+      - data/processed/model_xgboost.pkl
+
+  evaluate:
+    cmd: python pipeline/evaluate.py
+    deps:
+      - pipeline/evaluate.py
+      - data/processed/model_random_forest.pkl
+      - data/processed/model_logistic_regression.pkl
+      - data/processed/model_gradient_boosting.pkl
+      - data/processed/model_xgboost.pkl
+      - data/processed/X_test.npy
+      - data/processed/y_test.npy
+      - params.yaml
+    outs:
+      - data/processed/evaluation_report.json
+    metrics:
+      - data/processed/metrics.json:
+          cache: false
