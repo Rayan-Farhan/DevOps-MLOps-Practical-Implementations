@@ -1,4 +1,7 @@
 services:
+  # ─────────────────────────────────────────────
+  # Application Services
+  # ─────────────────────────────────────────────
   backend:
     build:
       context: .
@@ -8,6 +11,7 @@ services:
       - "8000:8000"
     volumes:
       - ./app:/app/app
+      - ./data:/app/data
     environment:
       - PYTHONUNBUFFERED=1
       # Environment Configuration
@@ -24,6 +28,8 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - LOG_FILE=${LOG_FILE:-app/logs/app.log}
       - LOG_DIR=${LOG_DIR:-app/logs}
+      # MLflow (pipeline only — API uses the .pkl file directly)
+      - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI:-http://mlflow:5000}
 
   frontend:
     build:
@@ -39,3 +45,71 @@ services:
       - "3000:80"
     depends_on:
       - backend
+
+  # ─────────────────────────────────────────────
+  # MLflow Tracking Server
+  # Access UI at http://localhost:5000
+  # ─────────────────────────────────────────────
+  mlflow:
+    build:
+      context: ./mlflow
+      dockerfile: Dockerfile
+    container_name: devopsmlops-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlflow.db:/mlruns/mlflow.db
+      - mlartifacts:/mlartifacts
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ─────────────────────────────────────────────
+  # Prometheus — scrapes /metrics from backend
+  # Access UI at http://localhost:9090
+  # ─────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: devopsmlops-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    depends_on:
+      - backend
+
+  # ─────────────────────────────────────────────
+  # Grafana — visualizes Prometheus metrics
+  # Access UI at http://localhost:3001
+  # Default login: admin / admin
+  # ─────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: devopsmlops-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/etc/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+
+# ─────────────────────────────────────────────
+# Named volumes (persist data across container restarts)
+# ─────────────────────────────────────────────
+volumes:
+  mlartifacts:
+  prometheus_data:
+  grafana_data:
