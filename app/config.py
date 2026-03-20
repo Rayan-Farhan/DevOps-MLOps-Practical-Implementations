@@ -31,10 +31,18 @@ class Settings:
     LOG_DIR: str = os.getenv("LOG_DIR", "app/logs")
     
     MODEL_PATH: str = os.getenv(
-        "MODEL_PATH", 
+        "MODEL_PATH",
         str(Path(__file__).parent / "model" / "diabetes_model.pkl")
     )
-    
+
+    # MLflow tracking URI used by pipeline scripts.
+    # Uses SQLite locally (works on Windows + Linux). file:// URIs are broken on Windows.
+    # Override with MLFLOW_TRACKING_URI=http://localhost:5000 when using Docker.
+    MLFLOW_TRACKING_URI: str = os.getenv(
+        "MLFLOW_TRACKING_URI",
+        f"sqlite:///{(Path(__file__).resolve().parent.parent / 'mlflow.db').as_posix()}",
+    )
+
     APP_NAME: str = os.getenv("APP_NAME", "Diabetes Prediction API")
     APP_VERSION: str = os.getenv("APP_VERSION", "1.0.0")
     APP_DESCRIPTION: str = os.getenv(
