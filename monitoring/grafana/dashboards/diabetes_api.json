@@ -1,0 +1,127 @@
+{
+  "title": "Diabetes Prediction API",
+  "uid": "diabetes-api-dashboard",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Total Predictions",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "expr": "sum(diabetes_predictions_total)",
+          "legendFormat": "Total",
+          "datasource": "Prometheus"
+        }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" }
+    },
+    {
+      "id": 2,
+      "title": "Diabetic Predictions",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "expr": "sum(diabetes_predictions_total{result=\"Diabetic\"})",
+          "legendFormat": "Diabetic",
+          "datasource": "Prometheus"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "thresholds": { "steps": [{ "color": "red", "value": 0 }] }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Non-Diabetic Predictions",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "expr": "sum(diabetes_predictions_total{result=\"Non-Diabetic\"})",
+          "legendFormat": "Non-Diabetic",
+          "datasource": "Prometheus"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "thresholds": { "steps": [{ "color": "green", "value": 0 }] }
+      }
+    },
+    {
+      "id": 4,
+      "title": "HTTP Request Rate (req/s)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total[1m])) by (handler)",
+          "legendFormat": "{{handler}}",
+          "datasource": "Prometheus"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "API Latency (p50 / p95 / p99)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket[1m])) by (le))",
+          "legendFormat": "p50",
+          "datasource": "Prometheus"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[1m])) by (le))",
+          "legendFormat": "p95",
+          "datasource": "Prometheus"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[1m])) by (le))",
+          "legendFormat": "p99",
+          "datasource": "Prometheus"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Prediction Distribution Over Time",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(diabetes_predictions_total{result=\"Diabetic\"}[5m])",
+          "legendFormat": "Diabetic/s",
+          "datasource": "Prometheus"
+        },
+        {
+          "expr": "rate(diabetes_predictions_total{result=\"Non-Diabetic\"}[5m])",
+          "legendFormat": "Non-Diabetic/s",
+          "datasource": "Prometheus"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "HTTP Errors Rate (4xx + 5xx)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{status=~\"4..|5..\"}[1m])) by (status)",
+          "legendFormat": "HTTP {{status}}",
+          "datasource": "Prometheus"
+        }
+      ]
+    }
+  ]
+}
