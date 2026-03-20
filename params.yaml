@@ -1,0 +1,76 @@
+data:
+  # Source CSV copied by ingest.py into data/raw/
+  source_local_path: app/model/diabetes.csv
+  # Minimum acceptable row count after ingestion
+  min_rows: 500
+  # Columns where 0 is biologically impossible and should be treated as missing
+  replace_zeros_with_nan:
+    - Glucose
+    - BloodPressure
+    - SkinThickness
+    - Insulin
+    - BMI
+  test_size: 0.2
+  random_state: 42
+  # Acceptable Outcome (positive class) rate: 20%–80%
+  class_balance_min: 0.20
+  class_balance_max: 0.80
+
+models:
+  random_forest:
+    n_estimators: 200
+    max_depth: 8
+    min_samples_split: 3
+    min_samples_leaf: 2
+    random_state: 42
+
+  logistic_regression:
+    C: 1.0
+    max_iter: 1000
+    random_state: 42
+
+  gradient_boosting:
+    n_estimators: 100
+    learning_rate: 0.1
+    max_depth: 5
+    random_state: 42
+
+  xgboost:
+    n_estimators: 100
+    learning_rate: 0.1
+    max_depth: 5
+    random_state: 42
+
+evaluation:
+  # Metric used to rank and promote models
+  # Options: accuracy | f1_diabetic | f1_macro | roc_auc
+  primary_metric: f1_diabetic
+  # New model must beat current model by at least this margin to be promoted
+  min_improvement: 0.005
+  # Absolute minimum the primary metric must reach for promotion
+  promotion_threshold: 0.55
+
+tuning:
+  # Set to true to run GridSearchCV on the best cross-validated model
+  enabled: true
+  cv_folds: 5
+  # Param grids for GridSearchCV (one per model name)
+  param_grids:
+    random_forest:
+      n_estimators: [100, 200]
+      max_depth: [6, 8, 10]
+    logistic_regression:
+      C: [0.1, 1.0, 10.0]
+    gradient_boosting:
+      n_estimators: [100, 200]
+      learning_rate: [0.05, 0.1]
+    xgboost:
+      n_estimators: [100, 200]
+      learning_rate: [0.05, 0.1]
+      max_depth: [3, 5]
+
+drift:
+  # Minimum number of logged predictions required before drift analysis runs
+  min_prediction_rows: 50
+  # Predictions DB path (relative to repo root)
+  predictions_db: data/predictions.db
