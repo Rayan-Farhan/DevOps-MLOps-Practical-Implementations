@@ -9,7 +9,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 app = FastAPI(
     title=settings.APP_NAME,
     description=settings.APP_DESCRIPTION,
-    version=settings.APP_VERSION
+    version=settings.APP_VERSION,
 )
 
 allowed_origins = settings.get_cors_origins()
@@ -34,13 +34,16 @@ logging.basicConfig(
 
 Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
 
+
 @app.on_event("startup")
 def startup_event():
     logging.info("FastAPI app started successfully!")
 
+
 @app.on_event("shutdown")
 def shutdown_event():
     logging.info("FastAPI app shutting down.")
+
 
 @app.get("/")
 def root():

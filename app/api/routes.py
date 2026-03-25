@@ -1,13 +1,15 @@
-from fastapi import APIRouter, HTTPException
-import numpy as np
-import pickle
 import logging
 import os
+import pickle
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
-from app.schemas.diabetes_schema import DiabetesInput
+
+import numpy as np
+from fastapi import APIRouter, HTTPException
+
 from app.config import settings
+from app.schemas.diabetes_schema import DiabetesInput
 from app.utils.metrics import inc_prediction
 
 router = APIRouter()
@@ -18,7 +20,9 @@ logger.setLevel(logging.INFO)
 # Metrics are defined centrally in app.utils.metrics
 
 # SQLite path for prediction logging (used by drift detection)
-_PREDICTIONS_DB = Path(__file__).resolve().parent.parent.parent / "data" / "predictions.db"
+_PREDICTIONS_DB = (
+    Path(__file__).resolve().parent.parent.parent / "data" / "predictions.db"
+)
 
 
 def _log_prediction(data, result: str) -> None:
@@ -26,7 +30,8 @@ def _log_prediction(data, result: str) -> None:
     try:
         _PREDICTIONS_DB.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(_PREDICTIONS_DB)
-        conn.execute("""
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS predictions (
                 id                        INTEGER PRIMARY KEY AUTOINCREMENT,
                 timestamp                 TEXT,
@@ -40,7 +45,8 @@ def _log_prediction(data, result: str) -> None:
                 age                       REAL,
                 result                    TEXT
             )
-        """)
+            """
+        )
         conn.execute(
             """INSERT INTO predictions
                (timestamp, pregnancies, glucose, blood_pressure, skin_thickness,
@@ -48,9 +54,14 @@ def _log_prediction(data, result: str) -> None:
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 datetime.now(timezone.utc).isoformat(),
-                data.Pregnancies, data.Glucose, data.BloodPressure,
-                data.SkinThickness, data.Insulin, data.BMI,
-                data.DiabetesPedigreeFunction, data.Age,
+                data.Pregnancies,
+                data.Glucose,
+                data.BloodPressure,
+                data.SkinThickness,
+                data.Insulin,
+                data.BMI,
+                data.DiabetesPedigreeFunction,
+                data.Age,
                 result,
             ),
         )
@@ -59,6 +70,7 @@ def _log_prediction(data, result: str) -> None:
     except Exception as e:
         # Prediction logging must never break the API response
         logger.warning("Prediction logging failed (non-fatal): %s", e)
+
 
 # Load ML model at module import time
 model_path = settings.MODEL_PATH
@@ -81,7 +93,11 @@ else:
             train_medians = loaded.get("train_medians", {})
             zero_impute_cols = loaded.get("zero_impute_cols", [])
             logger.info(
-                f"Model bundle loaded successfully. Model type: {type(model)}, scaler: {type(scaler)}, features: {model_features}"
+                "Model bundle loaded successfully. "
+                "Model type: %s, scaler: %s, features: %s",
+                type(model),
+                type(scaler),
+                model_features,
             )
     except Exception as e:
         logger.error(f"Failed to load model from {model_path}: {e} ({type(e).__name__})")
@@ -107,23 +123,34 @@ def predict_diabetes(data: DiabetesInput):
             row = [getattr(data, feature) for feature in model_features]
             input_data = np.array([row], dtype=float)
         else:
-            input_data = np.array([[
-                data.Pregnancies,
-                data.Glucose,
-                data.BloodPressure,
-                data.SkinThickness,
-                data.Insulin,
-                data.BMI,
-                data.DiabetesPedigreeFunction,
-                data.Age
-            ]], dtype=float)
+            input_data = np.array(
+                [
+                    [
+                        data.Pregnancies,
+                        data.Glucose,
+                        data.BloodPressure,
+                        data.SkinThickness,
+                        data.Insulin,
+                        data.BMI,
+                        data.DiabetesPedigreeFunction,
+                        data.Age,
+                    ]
+                ],
+                dtype=float,
+            )
 
-        # Apply the same zero→median imputation used during training.
+        # Apply the same zero-to-median imputation used during training.
         # In the Pima dataset, 0 is a sentinel for missing in biological columns.
         if train_medians and zero_impute_cols:
             features = model_features or [
-                "Pregnancies", "Glucose", "BloodPressure", "SkinThickness",
-                "Insulin", "BMI", "DiabetesPedigreeFunction", "Age"
+                "Pregnancies",
+                "Glucose",
+                "BloodPressure",
+                "SkinThickness",
+                "Insulin",
+                "BMI",
+                "DiabetesPedigreeFunction",
+                "Age",
             ]
             for i, feat in enumerate(features):
                 if feat in zero_impute_cols and input_data[0, i] == 0.0:
@@ -141,7 +168,7 @@ def predict_diabetes(data: DiabetesInput):
         inc_prediction(result)
         _log_prediction(data, result)
 
-        logger.info(f"✅ Prediction made successfully: {result}")
+        logger.info("Prediction made successfully: %s", result)
         return {"prediction": int(prediction[0]), "result": result}
 
     except Exception as e:

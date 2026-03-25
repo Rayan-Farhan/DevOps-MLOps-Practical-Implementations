@@ -3,10 +3,12 @@ from app.main import app
 
 client = TestClient(app)
 
+
 def test_health_check():
     response = client.get("/api/health")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
+
 
 def test_predict_diabetes():
     payload = {
@@ -17,7 +19,7 @@ def test_predict_diabetes():
         "Insulin": 85,
         "BMI": 28.5,
         "DiabetesPedigreeFunction": 0.45,
-        "Age": 33
+        "Age": 33,
     }
 
     response = client.post("/api/predict", json=payload)
