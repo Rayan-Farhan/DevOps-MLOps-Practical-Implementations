@@ -51,6 +51,8 @@ jobs:
           pip-audit -r requirements.txt || true
 
       - name: Run tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: pytest -q
 
   # Job 2: ML Pipeline (ingest → validate → preprocess → train → evaluate)
