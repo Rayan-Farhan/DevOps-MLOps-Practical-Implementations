@@ -1,4 +1,4 @@
-from prometheus_client import Counter
+﻿from prometheus_client import Counter
 
 # Custom business metrics for the Diabetes API
 
@@ -21,4 +21,3 @@ def inc_prediction(result: str) -> None:
     except Exception:
         # Metrics must never break request handling
         pass
-    
