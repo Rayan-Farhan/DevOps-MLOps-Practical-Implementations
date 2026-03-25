@@ -145,6 +145,9 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}-backend
+          tags: |
+            type=raw,value=latest
+            type=sha
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -180,6 +183,9 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}-frontend
+          tags: |
+            type=raw,value=latest
+            type=sha
 
       - name: Build and push
         uses: docker/build-push-action@v6
