@@ -6,7 +6,11 @@ class DiabetesInput(BaseModel):
         ..., ge=0, le=20, example=2, description="Number of pregnancies (0-20)"
     )
     Glucose: int = Field(
-        ..., ge=0, le=300, example=120, description="Plasma glucose concentration (0-300)"
+        ...,
+        ge=0,
+        le=300,
+        example=120,
+        description="Plasma glucose concentration (0-300)",
     )
     BloodPressure: int = Field(
         ...,

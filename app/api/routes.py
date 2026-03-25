@@ -30,8 +30,7 @@ def _log_prediction(data, result: str) -> None:
     try:
         _PREDICTIONS_DB.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(_PREDICTIONS_DB)
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS predictions (
                 id                        INTEGER PRIMARY KEY AUTOINCREMENT,
                 timestamp                 TEXT,
@@ -45,8 +44,7 @@ def _log_prediction(data, result: str) -> None:
                 age                       REAL,
                 result                    TEXT
             )
-            """
-        )
+            """)
         conn.execute(
             """INSERT INTO predictions
                (timestamp, pregnancies, glucose, blood_pressure, skin_thickness,
@@ -100,7 +98,9 @@ else:
                 model_features,
             )
     except Exception as e:
-        logger.error(f"Failed to load model from {model_path}: {e} ({type(e).__name__})")
+        logger.error(
+            f"Failed to load model from {model_path}: {e} ({type(e).__name__})"
+        )
         model = None
         scaler = None
         model_features = None
@@ -161,7 +161,9 @@ def predict_diabetes(data: DiabetesInput):
             try:
                 input_data = scaler.transform(input_data)
             except Exception as se:
-                logger.warning(f"Scaler transform failed: {se}; continuing with raw inputs")
+                logger.warning(
+                    f"Scaler transform failed: {se}; continuing with raw inputs"
+                )
 
         prediction = model.predict(input_data)
         result = "Diabetic" if prediction[0] == 1 else "Non-Diabetic"
