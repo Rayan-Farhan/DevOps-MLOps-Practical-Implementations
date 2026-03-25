@@ -1,0 +1,168 @@
+name: scheduled-retrain
+
+on:
+  # Every Sunday at 02:00 UTC
+  schedule:
+    - cron: "0 2 * * 0"
+  # Allow manual trigger from GitHub Actions UI
+  workflow_dispatch:
+    inputs:
+      force_retrain:
+        description: "Force retrain even if no drift is detected"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  # Job 1: Drift detection
+  # Checks whether live prediction data has drifted from training distribution.
+  # Exit code 2 from drift.py means drift was detected → triggers retrain.
+  drift-check:
+    name: Drift Detection (Evidently AI)
+    runs-on: ubuntu-latest
+    outputs:
+      drift_detected: ${{ steps.drift.outputs.drift_detected }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pipeline dependencies
+        run: |
+          python -m pip install -U pip
+          pip install -r requirements-pipeline.txt
+
+      - name: Run drift detection
+        id: drift
+        run: |
+          set +e
+          python pipeline/drift.py
+          EXIT_CODE=$?
+          set -e
+          if [ "$EXIT_CODE" -eq 2 ]; then
+            echo "drift_detected=true" >> $GITHUB_OUTPUT
+            echo "Drift detected — retraining will be triggered."
+          else
+            echo "drift_detected=false" >> $GITHUB_OUTPUT
+            echo "No drift detected."
+          fi
+
+      - name: Upload drift report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: drift-report
+          path: data/processed/drift_report.json
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 2: ML Pipeline retraining
+  # Runs when: drift detected OR force_retrain=true (manual trigger)
+  # ─────────────────────────────────────────────────────────────────────────
+  retrain:
+    name: Retrain ML Pipeline (DVC)
+    needs: drift-check
+    runs-on: ubuntu-latest
+    if: |
+      needs.drift-check.outputs.drift_detected == 'true' ||
+      github.event.inputs.force_retrain == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install all dependencies
+        run: |
+          python -m pip install -U pip
+          pip install -r requirements.txt
+          pip install -r requirements-pipeline.txt
+
+      - name: DVC pull cached data (if S3 remote configured)
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION:    ${{ secrets.AWS_DEFAULT_REGION }}
+        run: |
+          if grep -qE "^\s*url\s*=" .dvc/config 2>/dev/null; then
+            dvc pull || echo "DVC pull failed — continuing with local data"
+          else
+            echo "No DVC remote configured — skipping pull"
+          fi
+
+      - name: Run DVC pipeline (full retrain)
+        env:
+          MLFLOW_TRACKING_URI: "sqlite:///${{ github.workspace }}/mlflow.db"
+        run: dvc repro --force
+
+      - name: Show updated metrics
+        run: dvc metrics show || true
+
+      - name: Commit promoted model (if updated)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add app/model/diabetes_model.pkl data/processed/metrics.json || true
+          if git diff --cached --quiet; then
+            echo "No model changes to commit."
+          else
+            git commit -m "ci: scheduled retrain — new model promoted [skip ci]"
+            git push
+          fi
+
+      - name: Upload training report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: training-report
+          path: data/processed/training_report.json
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 3: Rebuild and push Docker images with new model
+  # ─────────────────────────────────────────────────────────────────────────
+  rebuild-images:
+    name: Rebuild Docker Images
+    needs: retrain
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (with promoted model)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository }}-backend:latest
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository }}-frontend:latest
