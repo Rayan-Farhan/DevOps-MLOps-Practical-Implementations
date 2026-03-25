@@ -19,7 +19,7 @@ services:
       - API_HOST=${API_HOST:-0.0.0.0}
       - API_PORT=${API_PORT:-8000}
       - API_PREFIX=${API_PREFIX:-/api}
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173,http://54.224.141.110:3000}
       - CORS_ALLOW_ALL=${CORS_ALLOW_ALL:-true}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - LOG_FILE=${LOG_FILE:-app/logs/app.log}
