@@ -61,10 +61,8 @@ jobs:
           name: drift-report
           path: data/processed/drift_report.json
 
-  # ─────────────────────────────────────────────────────────────────────────
   # Job 2: ML Pipeline retraining
   # Runs when: drift detected OR force_retrain=true (manual trigger)
-  # ─────────────────────────────────────────────────────────────────────────
   retrain:
     name: Retrain ML Pipeline (DVC)
     needs: drift-check
@@ -128,9 +126,7 @@ jobs:
           name: training-report
           path: data/processed/training_report.json
 
-  # ─────────────────────────────────────────────────────────────────────────
   # Job 3: Rebuild and push Docker images with new model
-  # ─────────────────────────────────────────────────────────────────────────
   rebuild-images:
     name: Rebuild Docker Images
     needs: retrain
@@ -151,13 +147,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Normalize image repository
+        run: echo "IMAGE_REPO=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       - name: Build and push backend
         uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository }}-backend:latest
+          tags: ghcr.io/${{ env.IMAGE_REPO }}-backend:latest
 
       - name: Build and push frontend
         uses: docker/build-push-action@v6
@@ -165,4 +164,4 @@ jobs:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository }}-frontend:latest
+          tags: ghcr.io/${{ env.IMAGE_REPO }}-frontend:latest

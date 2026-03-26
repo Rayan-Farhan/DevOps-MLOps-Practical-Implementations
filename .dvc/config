@@ -2,4 +2,3 @@
     remote = s3-remote
 ['remote "s3-remote"']
     url = s3://rayan-diabetes-ml-dvc-store
-    credentialpath = ../env
