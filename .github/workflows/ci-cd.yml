@@ -130,6 +130,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: false
+
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v3
 
