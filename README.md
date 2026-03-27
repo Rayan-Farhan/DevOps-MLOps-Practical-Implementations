@@ -4,9 +4,15 @@ A production-grade MLOps pipeline for diabetes prediction using FastAPI, React, 
 
 ## 🌐 Live Demo
 
-**Try it now:** [http://54.224.141.110:3000](http://54.224.141.110:3000)
+[Try it now!](http://54.224.141.110:3000)
 
 Deployed on **AWS EC2** with Docker Compose. The live server runs the full stack including the React frontend, FastAPI backend, and ML model.
+
+---
+
+<img width="960" height="503" alt="frontend" src="https://github.com/user-attachments/assets/11f0896c-1492-40c5-bba1-1b0267a14ec9" />
+
+<img width="960" height="503" alt="grafana" src="https://github.com/user-attachments/assets/77e7051d-d439-48e5-b2b0-3c6ba1ba5faa" />
 
 ---
 
