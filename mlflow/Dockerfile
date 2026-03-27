@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-RUN pip install --no-cache-dir "mlflow>=2.10.0"
+RUN pip install --no-cache-dir "mlflow-skinny>=2.10.0"
 
 EXPOSE 5000
 
